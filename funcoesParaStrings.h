@@ -3,9 +3,94 @@
 #include <stdlib.h>
 #include <ctype.h>
 #include <stdbool.h>
-#define boolean short
-#define true 1
-#define false 0
+
+//Define a quantidade maxima de erros seguidos que podem ocorrer dentro do looping das funcoes safeCalloc e safeMalloc.
+short quantidadeMaximaErros = 10;
+
+/**
+ * Esta funcao serve para executar de forma segura a funcao calloc, evitando parametros menores ou iguais a zero e retorno igual a NULL.
+ * @param nmemb Parametro nmemb que sera repassado para a funcao calloc.
+ * @param size Parametro size que sera repassado para a funcao calloc.
+ * @return Ponteiro diferente de null retornado da funcao calloc.
+ */
+void *safeCalloc(size_t nmemb, size_t size)
+{
+    if (nmemb <= 0)
+    {
+        perror("O valor do parametro nmemb nao pode ser menor ou igual a zero.\n");
+        abort();
+    }
+
+    if (size <= 0)
+    {
+        perror("O valor do parametro size nao pode ser menor ou igual a zero.\n");
+        abort();
+    }
+
+    void *ponteiro = NULL;
+
+    bool erro = true;
+    short quantidadeErros = 0;
+    while(erro)
+    {
+        ponteiro = calloc(nmemb, size);
+
+        if (ponteiro == NULL)
+        {
+            erro = true;
+            perror("Erro ao realizar o calloc. O valor retornado eh NULL.\n");
+            quantidadeErros++;
+        }
+        else erro = false;
+
+        if (quantidadeErros >= quantidadeMaximaErros)
+        {
+            perror("Varios erros seguidos aconteceram ao tentar realizar o alocamento de memoria por meio da funcao calloc da linguagem C.\n");
+            abort();
+        }
+    }
+
+    return ponteiro;
+}
+
+/**
+ * Esta funcao serve para executar de forma segura a funcao malloc, evitando parametros menores ou iguais a zero e retorno igual a NULL.
+ * @param size Parametro size que sera repassado para a funcao malloc.
+ * @return Ponteiro diferente de NULL retornado da funcao malloc.
+ * */
+void *safeMalloc(size_t size)
+{
+    if (size <= 0)
+    {
+        perror("O valor do parametro size nao pode ser menor ou igual a zero.\n");
+        abort();
+    }
+
+    void *ponteiro = NULL;
+
+    bool erro = true;
+    short quantidadeErros = 0;
+    while(erro)
+    {
+        ponteiro = malloc(size);
+
+        if (ponteiro == NULL)
+        {
+            erro = true;
+            perror("Erro ao realizar o malloc. O valor retornado eh NULL.\n");
+            quantidadeErros++;
+        }
+        else erro = false;
+
+        if (quantidadeErros >= quantidadeMaximaErros)
+        {
+            perror("Varios erros seguidos aconteceram ao tentar realizar o alocamento de memoria por meio da funcao malloc da linguagem C.\n");
+            abort();
+        }
+    }
+
+    return ponteiro;
+}
 
 /**
  * Funcao da Funcao: Esta funcao serve para obter um segmento de um arranjo de caracteres, informando onde que sera cortado.
@@ -14,10 +99,10 @@
  * @param length Indice de fim nao incluindo o elemento do fim.
  * @return Ponteiro apontando para o arranjo de caracteres resultante.
 */
-char *str_substring(char *str, int begin, int length)
+char *strSubstring(const char *str, int begin, size_t length)
 {
-    int len_result=length-begin+1;
-    char result[len_result];
+    size_t lenResult= length - begin + 1;
+    char result[lenResult];
     int i, j;
     for(i=begin, j=0; i<length ; i++, j++)
     {
@@ -26,17 +111,17 @@ char *str_substring(char *str, int begin, int length)
     result[j]='\0';
    
     return strdup(result);
-}//fim da funcao str_substring
+}//fim da funcao strSubstring
 
 /**
- * Funcao da Funcao: Esta funcao serve para obter a menor posicao da primeira ocorrencia de um segmento de um arranjo de caracteres em um arranjo de caracteres.
+ * Esta funcao serve para obter a menor posicao da primeira ocorrencia de um segmento de um arranjo de caracteres em um arranjo de caracteres.
  * @param *string Ponteiro apontando para um arranjo de caracteres que nele sera procurada por um segmento.
  * @param *key Ponteiro apontando para um segmento de arranjo de caracteres que sera procurado no arranjo de caracteres.
  * @return A menor posicao da primeira ocorrencia de um segmento de um arranjo de caracteres no arranjo de caracteres.
 */
-int str_indexOf(char *string, char *key)
+size_t strIndexOf(char *string, char *key)
 {    
-    int position=-1;
+    size_t position= (size_t) -1;
     int i=0;
     while(i<strlen(string))
     {
@@ -52,7 +137,7 @@ int str_indexOf(char *string, char *key)
             if(j==strlen(key))
             {
                 position=i-strlen(key);
-                i=strlen(string);//<-finalizando o looping
+                i= (int) strlen(string);//<-finalizando o looping
             }
         }
         else
@@ -60,47 +145,45 @@ int str_indexOf(char *string, char *key)
     }
 
     //Colocando NULL para todos os ponteiros
-    string=NULL;
-    key=NULL;
 
     return position;
-}//fim da funcao str_indexOf
+}//fim da funcao strIndexOf
 
 /**
- * Funcao da Funcao: Esta funcao serve para obter a menor posicao da primeira ocorrencia de um segmento de um arranjo de caracteres em um arranjo de caracteres.
+ * Esta funcao serve para obter a menor posicao da primeira ocorrencia de um segmento de um arranjo de caracteres em um arranjo de caracteres.
  * @param *string Ponteiro apontando para um arranjo de caracteres no qual sera feita a busca pelo segmento.
  * @param *key Ponteiro apontando para um segmento de arranjo de caracteres que sera procurado no arranjo de caracteres.
  * @param begin Posicao limite a esquerda.
  * @return A menor posicao da primeira ocorrencia do segmento de arranjo de caracteres no arranjo de caracteres.
 */
-int str_indexOfBegin(char *string, char *key, int begin)
+size_t strIndexOfBegin(char *string, char *key, int begin)
 {
-    char *copy_string=(char*)calloc(1+strlen(string), sizeof(char));
-    strcpy(copy_string, string);
-    strcpy(copy_string, str_substring(copy_string, begin, strlen(copy_string)));
+    char *copyString=(char*)safeCalloc(1 + strlen(string), sizeof(char));
+    strcpy(copyString, string);
+    strcpy(copyString, strSubstring(copyString, begin, strlen(copyString)));
 
-    int resp=str_indexOf(copy_string, key)+begin;
+    size_t resp= strIndexOf(copyString, key) + begin;
 
     return resp;
-}//fim do metodo str_indexOfBegin
+}//fim do metodo strIndexOfBegin
 
 /**
- * Funcao da Funcao: Esta funcao serve para obter a maior posicao da primeira ocorrencia de um segmento de um arranjo de caracteres em um arranjo de caracteres.
+ * Esta funcao serve para obter a maior posicao da primeira ocorrencia de um segmento de um arranjo de caracteres em um arranjo de caracteres.
  * @param *string Ponteiro apontando para um arranjo de caracteres no qual sera realizado a busca pelo segmento.
  * @param *key Ponteiro apontando para o segmento de arranjo de caracteres que sera procurado no arranjo de caracteres.
  * @return A maior posicao da primeira ocorrencia do segmento no arranjo de caracteres.
 */
-int str_lastIndexOf(char *string, char *key)
+size_t strLastIndexOf(char *string, char *key)
 {
-    const int len_string=strlen(string);
-    const int len_key=strlen(key);
-    int position=-1;
-    int i=len_string-1;
+    const size_t lenString=strlen(string);
+    const size_t  lenKey= (const int) strlen(key);
+    size_t position= (size_t) -1;
+    size_t i= lenString - 1;
     while(i>=0)
     {
-        if(string[i]==key[len_key-1])
+        if(string[i]==key[lenKey - 1])
         {
-            int j=len_key-2;
+            size_t j= lenKey - 2;
             i--;
             while(string[i]==key[j] && j>=0 && i>=0)
             {
@@ -109,8 +192,8 @@ int str_lastIndexOf(char *string, char *key)
             }
             if(j==-1)
             {
-                position=i+1;
-                i=-1;//<-finalizando o looping
+                position= (size_t) (i + 1);
+                i= (size_t) -1;//<-finalizando o looping
             }
         }
         else
@@ -118,85 +201,82 @@ int str_lastIndexOf(char *string, char *key)
     }
 
     //Colocando NULL para todos os ponteiros
-    string=NULL;
-    key=NULL;
 
     return position;
-}//fim da funcao str_lastIndexOf
+}//fim da funcao strLastIndexOf
 
 /**
- * Funcao da Funcao: Esta funcao serve para obter a maior posicao da primeira ocorrencia de um segmento de um arranjo de caracteres em um arranjo de caracteres.
+ * Esta funcao serve para obter a maior posicao da primeira ocorrencia de um segmento de um arranjo de caracteres em um arranjo de caracteres.
  * @param *string Ponteiro apontando para um arranjo de caracteres no qual sera realizado a busca pelo segmento.
  * @param *key Ponteiro apontando para o segmento de um arranjo de caracteres que sera procurado no arranjo de caracteres.
  * @param end Posicao limite a esquerda.
  * @return A maior posicao da primeira ocorrencia da substring na String.
 */
-int str_lastIndexOfEnd(char *string, char *key, int end)
+size_t strLastIndexOfEnd(char *string, char *key, int end)
 {
-    char *copy_string=(char*)calloc(1+strlen(string), sizeof(char));
-    strcpy(copy_string, string);
-    copy_string=str_substring(copy_string, 0, end+1);
+    char *copyString=(char*)safeCalloc(1 + strlen(string), sizeof(char));
+    strcpy(copyString, string);
+    copyString= strSubstring(copyString, 0, (size_t) (end + 1));
 
     //Colocando NULL para todos os ponteiros exceto copy_String e key
-    string=NULL;
 
-    int resp=str_lastIndexOf(copy_string, key);
+    size_t resp= strLastIndexOf(copyString, key);
 
     return resp;
-}//fim da funcao str_lastIndexOfEnd
+}//fim da funcao strLastIndexOfEnd
 
 /**
- * Funcao da funcao: Esta funcao serve para realizar a substituicao de um segmento arranjo de caracteres contido dentro de outro arranjo de caracteres por outro segmento de arranjo de caracteres.
+ * Esta funcao serve para realizar a substituicao de um segmento arranjo de caracteres contido dentro de outro arranjo de caracteres por outro segmento de arranjo de caracteres.
  * @param *original Ponteiro apontando para o arranjo de caracteres original que sera modificado, resultando no retorno.
  * @param *replace Ponteiro apontando para o arranjo de caracteres que sera removido.
  * @param *replacement Ponteiro apontando para o arranjo de caracteres que sera adicionado no lugar do segmento de arranjo de caracteres que foi removido.
  * @return Ponteiro apontando para o novo arranjo de caracteres gerado a partir da substituicao.
 */
-char *str_replaceAll(char *original, char *replace, char *replacement)
+char *strReplaceAll(char *original, char *replace, char *replacement)
 {
-    char *copia_original=(char*)calloc(1+strlen(original), sizeof(char));
-    strcpy(copia_original, original);
+    char *copiaOriginal=(char*)safeCalloc(1 + strlen(original), sizeof(char));
+    strcpy(copiaOriginal, original);
     bool retornoNulo=false;
-    char *result;//A String resultante
+    char *result = NULL;//A String resultante
     char *ins;//O proximo ponto de insercao
     char *tmp;//Variavel temporaria
-    int len_replace;//tamanho de replace (String a ser removida)
-    int len_replacement;//tamanho de replacement(String a ser colocada no lugar de replace)
-    int len_front;//distancia entre o inicio e o fim de replace
+    int lenReplace;//tamanho de replace (String a ser removida)
+    int lenReplacement;//tamanho de replacement(String a ser colocada no lugar de replace)
+    int lenFront;//distancia entre o inicio e o fim de replace
     int count;//numero de substituicoes
 
     //Chacando se eh possivel inicializar a substituicao
-    if(copia_original && replace)
+    if(copiaOriginal && replace)
     {
-        len_replace=strlen(replace);
-        if(len_replace!=0)
+        lenReplace= (int) strlen(replace);
+        if(lenReplace != 0)
         {
             if(!replacement)
             {
-                replacement=(char*)calloc(1, sizeof(char));
+                replacement=(char*)safeCalloc(1, sizeof(char));
                 strcpy(replacement, "");
             }
 
-            len_replacement=strlen(replacement);
+            lenReplacement= (int) strlen(replacement);
 
             //Contando o numero de substituicoes que deverao ser realizadas
-            ins=copia_original;
+            ins=copiaOriginal;
             for(count=0;tmp=strstr(ins, replace); count++)
-                ins=tmp+len_replace;
+                ins= tmp + lenReplace;
 
-            tmp=result=(char*)calloc(1+strlen(copia_original)+(len_replacement-len_replace)*count+1, sizeof(char));
+            tmp=result=(char*)safeCalloc(1 + strlen(copiaOriginal) + (lenReplacement - lenReplace) * count + 1, sizeof(char));
 
             if(result)
             {
                 while(count--)
                 {
-                    ins=strstr(copia_original, replace);
-                    len_front=ins-copia_original;
-                    tmp=strncpy(tmp, copia_original, len_front)+len_front;
-                    tmp=strcpy(tmp, replacement)+len_replacement;
-                    copia_original+=len_front+len_replace;
+                    ins=strstr(copiaOriginal, replace);
+                    lenFront= (int) (ins - copiaOriginal);
+                    tmp= strncpy(tmp, copiaOriginal, (size_t) lenFront) + lenFront;
+                    tmp= strcpy(tmp, replacement) + lenReplacement;
+                    copiaOriginal+= lenFront + lenReplace;
                 }
-                strcpy(tmp, copia_original);
+                strcpy(tmp, copiaOriginal);
             }
             else retornoNulo=true;
         }
@@ -208,63 +288,54 @@ char *str_replaceAll(char *original, char *replace, char *replacement)
     char *retorno=result;
     if(retornoNulo)
     {
-        *retorno=*copia_original;
-        copia_original=NULL;
+        *retorno=*copiaOriginal;
     }
 
     //Colocando NULL em todos os ponteiros exceto retorno
-    replace=NULL;
-    replacement=NULL;
-    copia_original=NULL;
-    result=NULL;
-    ins=NULL;
-    tmp=NULL;
 
     return retorno;
-}//fim da funcao str_replaceAll
+}//fim da funcao strReplaceAll
 
 
 /**
- * Funcao da funcao: Esta funcao serve para verificar se um segmento de arranjo de caracteres esta contido em uma posicao do arranjo de arranjo de caracteres.
+ * Esta funcao serve para verificar se um segmento de arranjo de caracteres esta contido em uma posicao do arranjo de arranjo de caracteres.
  * @param *str[] Um arranjo de ponteiros apontando para os arranjos de caracteres.
  * @param len_str Numero de elementos no arranjo de ponteiros str.
  * @param *key Ponteiro apontando para para o arranjo de caracteres chave da pesquisa.
  * @return Valor booleano indicando se o elemento procurado encontra-se no arranjo de arranjos de caracteres.
 */
-bool str_arr_contains(char *str[], int len_str, char *key)
+bool strArrContains(char **str, int lenStr, char *key)
 {
     bool contains=false;
     int i=0;
-    while(i<len_str)
+    while(i < lenStr)
     {
         if(strcmp(str[i], key)==0)
         {
             contains=true;
-            i=len_str;
+            i=lenStr;
         }
         i++;
     }
 
     //Colocando NULL em todos os ponteiros
-    str=NULL;
-    key=NULL;
 
     return contains;
-}//fim da funcao str_arr_contains
+}//fim da funcao strArrContains
 
 /**
- * Funcao da funcao: Esta funcao serve para converter um arranjo de caracteres para minusculo.
+ * Esta funcao serve para converter um arranjo de caracteres para minusculo.
  * @param *string Ponteiro apontando para o arranjo de caracteres cujos caracteres serao convertidos para maiusculo.
  * @return Ponteiro apontando para o novo arranjo de caracteres resultante do processo de conversao para minusculo.
 */
-char *str_toLowerCase(char *string)
+char *strToLowerCase(char *string)
 {    
-    char copy_string[strlen(string)];
-    strcpy(copy_string, string);
+    char copyString[strlen(string)];
+    strcpy(copyString, string);
     for(int i=0;i<strlen(string);i++)
     {
-        copy_string[i]=tolower(copy_string[i]);
+        copyString[i]= (char) tolower(copyString[i]);
     }
 
-    return strdup(copy_string);
-}//fim da funcao str_toLowerCase
+    return strdup(copyString);
+}//fim da funcao strToLowerCase
