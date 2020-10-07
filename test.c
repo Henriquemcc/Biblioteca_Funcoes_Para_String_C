@@ -180,13 +180,43 @@ void testStrSubstring()
     char string[] = "ola mundo. testando um programa em C.";
     char *substring = strSubstring(strdup(string), 5, 8);
     assert(strcmp(substring, "und") == 0);
+    free(substring);
 }
 
 void testStrIndexOfBegin()
 {
     char string[] = "pato rato gato";
-    size_t posicao = strIndexOfBegin(strdup(string), strdup("ato"), 2);
+    size_t posicao = strIndexOfFromIndex(strdup(string), strdup("ato"), 2);
     assert(posicao == 6);
+}
+
+void testStrLastIndexOfEnd()
+{
+    char string[] = "arroz feijao macarrao batata brocolis alface tomate azeitona";
+    size_t posicao = strLastIndexOfFromIndex(strdup(string), strdup("ma"), 28);
+    assert(posicao == 13);
+}
+
+void testStrReplaceAll()
+{
+    char string[] = "maca bananna pera abacaxi melao melancia laranja limao jabuticaba manga";
+    char *substituicao = strReplaceAll(strdup(string), strdup("a"), strdup("z"));
+    assert(strcmp(substituicao, strdup("mzcz bznznnz perz zbzczxi melzo melznciz lzrznjz limzo jzbuticzbz mzngz"))==0);
+    free(substituicao);
+}
+
+void testStrArrContains()
+{
+    char *palavras [] = {"carvao", "gasolina", "querozene"};
+    assert(strArrContains((const char **) &palavras, 3, strdup("gasolina")) == true);
+}
+
+void testStrToLowerCase()
+{
+    char string[] = "AOIFJIUBHBEHJRBJHERFBJHFBJEHRFBJHEBFJHERB";
+    char *stringMinuscula = strToLowerCase(string);
+    assert(strcmp(stringMinuscula, strdup("aoifjiubhbehjrbjherfbjhfbjehrfbjhebfjherb")) == 0);
+    free(stringMinuscula);
 }
 
 int main()
@@ -196,4 +226,8 @@ int main()
     testSafeFree();
     testStrSubstring();
     testStrIndexOfBegin();
+    testStrLastIndexOfEnd();
+    testStrReplaceAll();
+    testStrArrContains();
+    testStrToLowerCase();
 }

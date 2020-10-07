@@ -5,7 +5,7 @@
 #include <stdbool.h>
 
 //Define a quantidade maxima de erros seguidos que podem ocorrer dentro do looping das funcoes safeCalloc e safeMalloc.
-short quantidadeMaximaErros = 10;
+short quantidadeMaximaErros = 100;
 
 /**
  * Esta funcao serve para executar de forma segura a funcao calloc, evitando parametros menores ou iguais a zero e retorno igual a NULL.
@@ -96,10 +96,23 @@ void *safeMalloc(const size_t size)
  * Esta funcao serve para limpar a area de memoria apontada pelo ponteiro para depois liberar por meio da funcao nativa free() da linguagem C.
  * @param ptr Ponteiro para a regiao de memoria a ser limpada e liberada.
  */
-void safeFree(const void *ptr)
+void safeFree(void *ptr)
 {
+    if (ptr == NULL)
+    {
+        perror("O parametro ptr da funcao safeFree nao pode ser nulo.\n");
+        abort();
+    }
+
     memset(ptr, '\0', sizeof(ptr));
     free(ptr);
+}
+
+char *strClone(const char *srcString)
+{
+    char *clone = calloc(sizeof(char), strlen(srcString)+1);
+    strcpy(clone, srcString);
+    return clone;
 }
 
 /**
@@ -109,19 +122,43 @@ void safeFree(const void *ptr)
  * @param length Indice de fim nao incluindo o elemento do fim.
  * @return Ponteiro apontando para o arranjo de caracteres resultante.
 */
-char *strSubstring(const char *str, const size_t begin, const size_t length)
+char *strSubstring(const char *srcString, const size_t beginIndex, const size_t endIndex)
 {
-    size_t lenResult= length - begin + 1;
-    char result[lenResult];
-    int i, j;
-    for(i=begin, j=0; i<length ; i++, j++)
+    if (beginIndex < 0)
     {
-        result[j]=str[i];
+        perror("O valor do parametro beginIndex da funcao strSubstring nao pode ser inferior a zero.\n");
+        abort();
+    }
+
+    if (endIndex <= 0)
+    {
+        perror("O valor do parametro endIndex da funcao strSubstring nao pode ser inferior ou igual a zero.\n");
+        abort();
+    }
+
+    if (beginIndex >= strlen(srcString))
+    {
+        perror("O valor do parametro beginIndex da funcao strSubstring nao pode ser superior ou igual ao tamanho da srcString.\n");
+        abort();
+    }
+
+    if (endIndex > strlen(srcString))
+    {
+        perror("O valor do parametro endIndex da funcao strSubstring nao pode ser superior ao tamanho da srcString.\n");
+        abort();
+    }
+
+    size_t lenResult= endIndex - beginIndex + 1;
+    char result[lenResult];
+    size_t i, j;
+    for(i=beginIndex, j=0; i < endIndex ; i++, j++)
+    {
+        result[j]=srcString[i];
     }
     result[j]='\0';
    
     return strdup(result);
-}//fim da funcao strSubstring
+}
 
 /**
  * Esta funcao serve para obter a menor posicao da primeira ocorrencia de um segmento de um arranjo de caracteres em um arranjo de caracteres.
@@ -129,35 +166,63 @@ char *strSubstring(const char *str, const size_t begin, const size_t length)
  * @param *key Ponteiro apontando para um segmento de arranjo de caracteres que sera procurado no arranjo de caracteres.
  * @return A menor posicao da primeira ocorrencia de um segmento de um arranjo de caracteres no arranjo de caracteres.
 */
-size_t strIndexOf(const char *string, const char *key)
-{    
-    size_t position= (size_t) -1;
-    int i=0;
-    while(i<strlen(string))
+size_t strIndexOf(const char *srcString, const char *str)
+{
+    if (srcString == NULL)
     {
-        if(string[i]==key[0])
-        {
-            int j=1;
-            i++;
-            while(string[i]==key[j] && j<strlen(key) && i<strlen(string))
-            {
-                i++;
-                j++;
-            }
-            if(j==strlen(key))
-            {
-                position=i-strlen(key);
-                i= (int) strlen(string);//<-finalizando o looping
-            }
-        }
-        else
-            i++;
+        perror("O parametro srcString da funcao strIndexOf nao pode ser nulo.\n");
+        abort();
     }
 
-    //Colocando NULL para todos os ponteiros
+    if (str == NULL)
+    {
+        perror("O parametro str da funcao strIndexOf nao pode ser nulo.\n");
+        abort();
+    }
+
+    if (strlen(str) > strlen(srcString))
+    {
+        perror("O tamanho do valor do parametro str nao pode ser maior que o tamanho do valor do parametro srcString na funcao strIndexOf.\n");
+        abort();
+    }
+
+    size_t position = strlen(srcString);
+    size_t headSrcString = 0;
+    size_t headStr = 0;
+    while(headSrcString < strlen(srcString))
+    {
+        //Comparando caractere por caractere
+        size_t headSrcStringComp = headSrcString;
+        while ((srcString[headSrcStringComp] == str[headStr]) && (headStr < strlen(str)) && (headSrcStringComp < strlen(srcString)))
+        {
+            headStr++;
+            headSrcStringComp++;
+        }
+
+        //Caso seja igual os caracteres o valor de headRegex sera igual ao tamanho da string regex.
+        if (headStr == strlen(str))
+        {
+            position = headSrcString;
+            headSrcString = strlen(srcString); // <- finalizando o looping.
+        }
+
+        //Casos os caracteres nao sejam iguais o valor de headRegex sera menor que o tamanho da string regex.
+        else if (headStr < strlen(str))
+        {
+            headStr = 0;
+            headSrcString++;
+        }
+
+        //Erro inesperado
+        else
+        {
+            perror("Erro inesperado na funcao strIndexOf.");
+            abort();
+        }
+    }
 
     return position;
-}//fim da funcao strIndexOf
+}
 
 /**
  * Esta funcao serve para obter a menor posicao da primeira ocorrencia de um segmento de um arranjo de caracteres em um arranjo de caracteres.
@@ -166,22 +231,37 @@ size_t strIndexOf(const char *string, const char *key)
  * @param begin Posicao limite a esquerda.
  * @return A menor posicao da primeira ocorrencia do segmento de arranjo de caracteres no arranjo de caracteres.
 */
-size_t strIndexOfBegin(const char *srcString, const char *key, const size_t begin)
+size_t strIndexOfFromIndex(const char *srcString, const char *str, const size_t fromIndex)
 {
-    /*
-    char *copyString=(char*)safeCalloc(1 + strlen(string), sizeof(char));
-    strcpy(copyString, string);
-    strcpy(copyString, strSubstring(copyString, begin, strlen(copyString)));
+    if (srcString == NULL)
+    {
+        perror("O parametro srcString da funcao strIndexOfFromIndex nao pode ser nulo\n");
+        abort();
+    }
 
-    size_t resp= strIndexOf(copyString, key) + begin;
+    if (str == NULL)
+    {
+        perror("O parametro str da funcao strIndexOfFromIndex nao pode ser nulo.\n");
+        abort();
+    }
 
-     */
+    if (fromIndex < 0)
+    {
+        perror("O valor do parametro fromIndex da funcao strIndexOfFromIndex nao pode ser inferior a zero.\n");
+        abort();
+    }
 
-    char *cutSrcString = strSubstring(srcString, begin, strlen(srcString));
+    if (fromIndex >= strlen(srcString))
+    {
+        perror("O valor do parametro fromIndex da funcao strIndexOfFromIndex nao pode ser superior ou igual ao tamanho da srcString.\n");
+        abort();
+    }
 
-    return strIndexOf(cutSrcString, key) + begin;
+    char *cutSrcString = strSubstring(srcString, fromIndex, strlen(srcString));
 
-}//fim do metodo strIndexOfBegin
+    return strIndexOf(cutSrcString, str) + fromIndex;
+
+}
 
 /**
  * Esta funcao serve para obter a maior posicao da primeira ocorrencia de um segmento de um arranjo de caracteres em um arranjo de caracteres.
@@ -189,37 +269,79 @@ size_t strIndexOfBegin(const char *srcString, const char *key, const size_t begi
  * @param *key Ponteiro apontando para o segmento de arranjo de caracteres que sera procurado no arranjo de caracteres.
  * @return A maior posicao da primeira ocorrencia do segmento no arranjo de caracteres.
 */
-size_t strLastIndexOf(const char *string, const char *key)
+size_t strLastIndexOf(const char *srcString, const char *str)
 {
-    const size_t lenString=strlen(string);
-    const size_t  lenKey= (const int) strlen(key);
-    size_t position= (size_t) -1;
-    size_t i= lenString - 1;
-    while(i>=0)
+    if (srcString == NULL)
     {
-        if(string[i]==key[lenKey - 1])
-        {
-            size_t j= lenKey - 2;
-            i--;
-            while(string[i]==key[j] && j>=0 && i>=0)
-            {
-                i--;
-                j--;
-            }
-            if(j==-1)
-            {
-                position= (size_t) (i + 1);
-                i= (size_t) -1;//<-finalizando o looping
-            }
-        }
-        else
-            i--;
+        perror("O parametro srcString da funcao strLastIndexOf nao pode ser nulo.\n");
+        abort();
     }
 
-    //Colocando NULL para todos os ponteiros
+    if (str == NULL)
+    {
+        perror("O parametro str da funcao strLastIndexOf nao pode ser nulo.\n");
+        abort();
+    }
+
+    if (strlen(str) > strlen(srcString))
+    {
+        perror("O tamanho do valor do parametro str nao pode ser maior que o tamanho do valor do parametro srcString na funcao strLastIndexOf.\n");
+        abort();
+    }
+
+    size_t position= strlen(srcString);
+    size_t headSrcString = strlen(srcString) -1;
+    size_t headStr = strlen(str) -1;
+    bool repetir0 = true;
+    while (repetir0)
+    {
+        //Comparando caractere por caractere
+        size_t headSrcStringComp = headSrcString;
+        bool repetir1 = true;
+        bool saoIguais = false;
+        while (repetir1)
+        {
+            if (srcString[headSrcStringComp] != str[headStr])
+            {
+                repetir1 = false;
+            }
+            else if (headSrcStringComp == 0 || headStr == 0)
+            {
+                saoIguais = true;
+                repetir1 = false;
+            }
+            else
+            {
+                headStr--;
+                headSrcStringComp--;
+            }
+        }
+
+        if (saoIguais)
+        {
+            position = headSrcStringComp;
+            repetir0 = false;
+        }
+
+        else if (headSrcString == 0)
+            repetir0 = false;
+
+        else if (headSrcString > 0)
+        {
+            headStr = strlen(str) -1;
+            headSrcString--;
+        }
+
+        else
+        {
+            perror("Erro inesperado na funcao strLastIndexOf.");
+            abort();
+        }
+
+    }
 
     return position;
-}//fim da funcao strLastIndexOf
+}
 
 /**
  * Esta funcao serve para obter a maior posicao da primeira ocorrencia de um segmento de um arranjo de caracteres em um arranjo de caracteres.
@@ -228,89 +350,138 @@ size_t strLastIndexOf(const char *string, const char *key)
  * @param end Posicao limite a esquerda.
  * @return A maior posicao da primeira ocorrencia da substring na String.
 */
-size_t strLastIndexOfEnd(const char *string, const char *key, const size_t end)
+size_t strLastIndexOfFromIndex(const char *srcString, const char *str, const size_t fromIndex)
 {
-    char *copyString=(char*)safeCalloc(1 + strlen(string), sizeof(char));
-    strcpy(copyString, string);
-    copyString= strSubstring(copyString, 0, (size_t) (end + 1));
+    if (srcString == NULL)
+    {
+        perror("O parametro srcString da funcao strLastIndexOfFromIndex nao pode ser nulo.\n");
+        abort();
+    }
 
-    //Colocando NULL para todos os ponteiros exceto copy_String e key
+    if (str == NULL)
+    {
+        perror("O parametro str da funcao strLastIndexOfFromIndex nao pode ser nulo.\n");
+        abort();
+    }
 
-    size_t resp= strLastIndexOf(copyString, key);
+    if (fromIndex <= 0)
+    {
+        perror("O valor do parametro fromIndex da funcao strLastIndexOfFromIndex nao pode ser inferior ou igual a zero.\n");
+        abort();
+    }
 
-    return resp;
-}//fim da funcao strLastIndexOfEnd
+    if (fromIndex > strlen(srcString))
+    {
+        perror("O valor do parametro fromIndex da funcao strLastIndexOfFromIndex nao pode ser superior ao tamanho da srcString.\n");
+        abort();
+    }
+
+    char *cutSrcString = strSubstring(srcString, 0, fromIndex);
+
+    return strLastIndexOf(cutSrcString, str);
+
+}
 
 /**
  * Esta funcao serve para realizar a substituicao de um segmento arranjo de caracteres contido dentro de outro arranjo de caracteres por outro segmento de arranjo de caracteres.
- * @param *original Ponteiro apontando para o arranjo de caracteres original que sera modificado, resultando no retorno.
+ * @param *original Ponteiro apontando para o arranjo de caracteres srcString que sera modificado, resultando no retorno.
  * @param *replace Ponteiro apontando para o arranjo de caracteres que sera removido.
  * @param *replacement Ponteiro apontando para o arranjo de caracteres que sera adicionado no lugar do segmento de arranjo de caracteres que foi removido.
  * @return Ponteiro apontando para o novo arranjo de caracteres gerado a partir da substituicao.
 */
-char *strReplaceAll(const char *original, const char *replace, const char *replacement)
+char *strReplaceAll(const char *srcString, const char *regex, const char *replacement)
 {
-    char *copiaOriginal=(char*)safeCalloc(1 + strlen(original), sizeof(char));
-    strcpy(copiaOriginal, original);
-    bool retornoNulo=false;
-    char *result = NULL;//A String resultante
-    char *ins;//O proximo ponto de insercao
-    char *tmp;//Variavel temporaria
-    int lenReplace;//tamanho de replace (String a ser removida)
-    int lenReplacement;//tamanho de replacement(String a ser colocada no lugar de replace)
-    int lenFront;//distancia entre o inicio e o fim de replace
-    int count;//numero de substituicoes
-
-    //Chacando se eh possivel inicializar a substituicao
-    if(copiaOriginal && replace)
+    if (srcString == NULL)
     {
-        lenReplace= (int) strlen(replace);
-        if(lenReplace != 0)
+        perror("O parametro srcString do metodo strReplaceAll nao pode ser nulo.\n");
+        abort();
+    }
+
+    if (regex == NULL)
+    {
+        perror("O parametro regex do metodo strReplaceAll nao pode ser nulo.\n");
+        abort();
+    }
+
+    if (replacement == NULL)
+    {
+        perror("O parametro replacement do metodo strReplaceAll nao pode ser nulo.\n");
+        abort();
+    }
+
+    if (strlen(regex) > strlen(srcString))
+    {
+        perror("O tamanho do valor do parametro regex nao pode ser maior que o tamanho do valor do parametro srcString.\n");
+        abort();
+    }
+
+    //Contando as ocorrencias do regex
+    size_t numberReplacements = 0;
+    size_t headCounterReplacements = 0;
+    bool repetir = true;
+    while (headCounterReplacements < strlen(srcString))
+    {
+        headCounterReplacements = strIndexOfFromIndex(srcString, regex, headCounterReplacements)+1;
+
+        if (headCounterReplacements < strlen(srcString))
+            numberReplacements++;
+
+        else if (headCounterReplacements > strlen(srcString))
         {
-            if(!replacement)
-            {
-                replacement=(char*)safeCalloc(1, sizeof(char));
-                strcpy(replacement, "");
-            }
-
-            lenReplacement= (int) strlen(replacement);
-
-            //Contando o numero de substituicoes que deverao ser realizadas
-            ins=copiaOriginal;
-            for(count=0;tmp=strstr(ins, replace); count++)
-                ins= tmp + lenReplace;
-
-            tmp=result=(char*)safeCalloc(1 + strlen(copiaOriginal) + (lenReplacement - lenReplace) * count + 1, sizeof(char));
-
-            if(result)
-            {
-                while(count--)
-                {
-                    ins=strstr(copiaOriginal, replace);
-                    lenFront= (int) (ins - copiaOriginal);
-                    tmp= strncpy(tmp, copiaOriginal, (size_t) lenFront) + lenFront;
-                    tmp= strcpy(tmp, replacement) + lenReplacement;
-                    copiaOriginal+= lenFront + lenReplace;
-                }
-                strcpy(tmp, copiaOriginal);
-            }
-            else retornoNulo=true;
+            perror("Erro inesperado na funcao strReplaceAll.");
+            abort();
         }
-        else retornoNulo=true;
-
     }
-    else retornoNulo=true;
 
-    char *retorno=result;
-    if(retornoNulo)
+    //Criando uma copia da string original
+    char destString[strlen(srcString) + numberReplacements*(strlen(replacement) - strlen(regex))+1];
+
+    size_t headSrcString = 0;
+    size_t headDestString = 0;
+    size_t headRegex = 0;
+    size_t headReplacement = 0;
+
+    //Executando o algoritmo da forca bruta
+    while (headSrcString < strlen(srcString))
     {
-        *retorno=*copiaOriginal;
+        //Comparando caractere por caractere
+        size_t headSrcStringComp = headSrcString;
+        while ( (srcString[headSrcString] == regex[headRegex]) && (headRegex < strlen(regex)) && (headSrcString < strlen(srcString)) )
+        {
+            headRegex++;
+            headSrcStringComp++;
+        }
+
+        //Caso seja igual os caracteres o valor de headRegex sera igual ao tamanho da string regex.
+        if (headRegex == strlen(regex))
+        {
+            headRegex = 0;
+            headReplacement = 0;
+            while (headReplacement < strlen(replacement))
+            {
+                destString[headDestString++] = replacement[headReplacement++];
+            }
+            headSrcString++;
+
+        }
+
+        //Casos os caracteres nao sejam iguais o valor de headRegex sera menor que o tamanho da string regex.
+        else if (headRegex < strlen(regex))
+        {
+            headRegex = 0;
+            destString[headDestString++] = srcString[headSrcString++];
+        }
+
+        //Erro inesperado
+        else
+        {
+            perror("Erro inesperado na funcao strReplaceAll.");
+            abort();
+        }
     }
 
-    //Colocando NULL em todos os ponteiros exceto retorno
-
-    return retorno;
-}//fim da funcao strReplaceAll
+    return strdup(destString);
+}
 
 
 /**
@@ -323,7 +494,7 @@ char *strReplaceAll(const char *original, const char *replace, const char *repla
 bool strArrContains(const char **str, const size_t lenStr, const char *key)
 {
     bool contains=false;
-    int i=0;
+    size_t i=0;
     while(i < lenStr)
     {
         if(strcmp(str[i], key)==0)
@@ -334,10 +505,8 @@ bool strArrContains(const char **str, const size_t lenStr, const char *key)
         i++;
     }
 
-    //Colocando NULL em todos os ponteiros
-
     return contains;
-}//fim da funcao strArrContains
+}
 
 /**
  * Esta funcao serve para converter um arranjo de caracteres para minusculo.
@@ -354,4 +523,4 @@ char *strToLowerCase(const char *string)
     }
 
     return strdup(copyString);
-}//fim da funcao strToLowerCase
+}
