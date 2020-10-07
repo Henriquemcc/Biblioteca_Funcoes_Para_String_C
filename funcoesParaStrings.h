@@ -13,7 +13,7 @@ short quantidadeMaximaErros = 10;
  * @param size Parametro size que sera repassado para a funcao calloc.
  * @return Ponteiro diferente de null retornado da funcao calloc.
  */
-void *safeCalloc(size_t nmemb, size_t size)
+void *safeCalloc(const size_t nmemb, const size_t size)
 {
     if (nmemb <= 0)
     {
@@ -58,7 +58,7 @@ void *safeCalloc(size_t nmemb, size_t size)
  * @param size Parametro size que sera repassado para a funcao malloc.
  * @return Ponteiro diferente de NULL retornado da funcao malloc.
  * */
-void *safeMalloc(size_t size)
+void *safeMalloc(const size_t size)
 {
     if (size <= 0)
     {
@@ -93,13 +93,23 @@ void *safeMalloc(size_t size)
 }
 
 /**
- * Funcao da Funcao: Esta funcao serve para obter um segmento de um arranjo de caracteres, informando onde que sera cortado.
+ * Esta funcao serve para limpar a area de memoria apontada pelo ponteiro para depois liberar por meio da funcao nativa free() da linguagem C.
+ * @param ptr Ponteiro para a regiao de memoria a ser limpada e liberada.
+ */
+void safeFree(const void *ptr)
+{
+    memset(ptr, '\0', sizeof(ptr));
+    free(ptr);
+}
+
+/**
+ * Esta funcao serve para obter um segmento de um arranjo de caracteres, informando onde que sera cortado.
  * @param *str Ponteiro apontando para o arranjo de caracteres original que sera cortado.
  * @param begin Indice de inicio.
  * @param length Indice de fim nao incluindo o elemento do fim.
  * @return Ponteiro apontando para o arranjo de caracteres resultante.
 */
-char *strSubstring(const char *str, int begin, size_t length)
+char *strSubstring(const char *str, const size_t begin, const size_t length)
 {
     size_t lenResult= length - begin + 1;
     char result[lenResult];
@@ -119,7 +129,7 @@ char *strSubstring(const char *str, int begin, size_t length)
  * @param *key Ponteiro apontando para um segmento de arranjo de caracteres que sera procurado no arranjo de caracteres.
  * @return A menor posicao da primeira ocorrencia de um segmento de um arranjo de caracteres no arranjo de caracteres.
 */
-size_t strIndexOf(char *string, char *key)
+size_t strIndexOf(const char *string, const char *key)
 {    
     size_t position= (size_t) -1;
     int i=0;
@@ -156,15 +166,21 @@ size_t strIndexOf(char *string, char *key)
  * @param begin Posicao limite a esquerda.
  * @return A menor posicao da primeira ocorrencia do segmento de arranjo de caracteres no arranjo de caracteres.
 */
-size_t strIndexOfBegin(char *string, char *key, int begin)
+size_t strIndexOfBegin(const char *srcString, const char *key, const size_t begin)
 {
+    /*
     char *copyString=(char*)safeCalloc(1 + strlen(string), sizeof(char));
     strcpy(copyString, string);
     strcpy(copyString, strSubstring(copyString, begin, strlen(copyString)));
 
     size_t resp= strIndexOf(copyString, key) + begin;
 
-    return resp;
+     */
+
+    char *cutSrcString = strSubstring(srcString, begin, strlen(srcString));
+
+    return strIndexOf(cutSrcString, key) + begin;
+
 }//fim do metodo strIndexOfBegin
 
 /**
@@ -173,7 +189,7 @@ size_t strIndexOfBegin(char *string, char *key, int begin)
  * @param *key Ponteiro apontando para o segmento de arranjo de caracteres que sera procurado no arranjo de caracteres.
  * @return A maior posicao da primeira ocorrencia do segmento no arranjo de caracteres.
 */
-size_t strLastIndexOf(char *string, char *key)
+size_t strLastIndexOf(const char *string, const char *key)
 {
     const size_t lenString=strlen(string);
     const size_t  lenKey= (const int) strlen(key);
@@ -212,7 +228,7 @@ size_t strLastIndexOf(char *string, char *key)
  * @param end Posicao limite a esquerda.
  * @return A maior posicao da primeira ocorrencia da substring na String.
 */
-size_t strLastIndexOfEnd(char *string, char *key, int end)
+size_t strLastIndexOfEnd(const char *string, const char *key, const size_t end)
 {
     char *copyString=(char*)safeCalloc(1 + strlen(string), sizeof(char));
     strcpy(copyString, string);
@@ -232,7 +248,7 @@ size_t strLastIndexOfEnd(char *string, char *key, int end)
  * @param *replacement Ponteiro apontando para o arranjo de caracteres que sera adicionado no lugar do segmento de arranjo de caracteres que foi removido.
  * @return Ponteiro apontando para o novo arranjo de caracteres gerado a partir da substituicao.
 */
-char *strReplaceAll(char *original, char *replace, char *replacement)
+char *strReplaceAll(const char *original, const char *replace, const char *replacement)
 {
     char *copiaOriginal=(char*)safeCalloc(1 + strlen(original), sizeof(char));
     strcpy(copiaOriginal, original);
@@ -304,7 +320,7 @@ char *strReplaceAll(char *original, char *replace, char *replacement)
  * @param *key Ponteiro apontando para para o arranjo de caracteres chave da pesquisa.
  * @return Valor booleano indicando se o elemento procurado encontra-se no arranjo de arranjos de caracteres.
 */
-bool strArrContains(char **str, int lenStr, char *key)
+bool strArrContains(const char **str, const size_t lenStr, const char *key)
 {
     bool contains=false;
     int i=0;
@@ -328,7 +344,7 @@ bool strArrContains(char **str, int lenStr, char *key)
  * @param *string Ponteiro apontando para o arranjo de caracteres cujos caracteres serao convertidos para maiusculo.
  * @return Ponteiro apontando para o novo arranjo de caracteres resultante do processo de conversao para minusculo.
 */
-char *strToLowerCase(char *string)
+char *strToLowerCase(const char *string)
 {    
     char copyString[strlen(string)];
     strcpy(copyString, string);

@@ -7,4 +7,4 @@ include_directories(.)
 
 add_executable(Biblioteca_Funcoes_Para_String_C
         funcoesParaStrings.h
-        teste_funcoes_para_strings.c)
+        test.c)
