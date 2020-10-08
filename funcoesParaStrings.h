@@ -8,10 +8,12 @@
 short quantidadeMaximaErros = 100;
 
 /**
- * Esta funcao serve para executar de forma segura a funcao calloc, evitando parametros menores ou iguais a zero e retorno igual a NULL.
+ * Serve para executar de forma segura a funcao calloc, evitando parametros menores ou iguais a zero e retorno igual a NULL.
  * @param nmemb Parametro nmemb que sera repassado para a funcao calloc.
  * @param size Parametro size que sera repassado para a funcao calloc.
  * @return Ponteiro diferente de null retornado da funcao calloc.
+ * @attention O programa ira abortar caso um dos valores passados por parametros seja inferior ou igual a zero.
+ * @attention O programa ira abortar caso apos o calloc retorne null por quantidadeMaximaErros tentativas consecutivas.
  */
 void *safeCalloc(const size_t nmemb, const size_t size)
 {
@@ -54,9 +56,11 @@ void *safeCalloc(const size_t nmemb, const size_t size)
 }
 
 /**
- * Esta funcao serve para executar de forma segura a funcao malloc, evitando parametros menores ou iguais a zero e retorno igual a NULL.
+ * Serve para executar de forma segura a funcao malloc, evitando parametros menores ou iguais a zero e retorno igual a NULL.
  * @param size Parametro size que sera repassado para a funcao malloc.
  * @return Ponteiro diferente de NULL retornado da funcao malloc.
+ * @attention O programa ira abortar caso o valor passado por parametro seja inferior ou igual a zero.
+ * @attention O programa ira abortar caso apos o malloc retorne null por quantidadeMaximaErros tentativas consecutivas.
  * */
 void *safeMalloc(const size_t size)
 {
@@ -93,8 +97,9 @@ void *safeMalloc(const size_t size)
 }
 
 /**
- * Esta funcao serve para limpar a area de memoria apontada pelo ponteiro para depois liberar por meio da funcao nativa free() da linguagem C.
+ * Serve para limpar a area de memoria apontada pelo ponteiro para depois liberar por meio da funcao nativa free() da linguagem C.
  * @param ptr Ponteiro para a regiao de memoria a ser limpada e liberada.
+ * @attention O programa ira abortar caso o parametro ptr seja nulo.
  */
 void safeFree(void *ptr)
 {
@@ -108,20 +113,27 @@ void safeFree(void *ptr)
     free(ptr);
 }
 
+/**
+ * Serve para criar uma copia de uma String.
+ * @param srcString Ponteiro da String que sera copiada.
+ * @return Ponteiro da copia da String.
+ * */
 char *strClone(const char *srcString)
 {
-    char *clone = calloc(sizeof(char), strlen(srcString)+1);
-    strcpy(clone, srcString);
+    char *clone = safeCalloc(sizeof(char), strlen(srcString)+1);
+    strncpy(clone, srcString, strlen(srcString)+1);
     return clone;
 }
 
 /**
- * Esta funcao serve para obter um segmento de um arranjo de caracteres, informando onde que sera cortado.
- * @param *str Ponteiro apontando para o arranjo de caracteres original que sera cortado.
- * @param begin Indice de inicio.
- * @param length Indice de fim nao incluindo o elemento do fim.
- * @return Ponteiro apontando para o arranjo de caracteres resultante.
-*/
+ * Serve para obter uma fatia de uma String.
+ * @param srcString Ponteiro para a String original.
+ * @param beginIndex Indice esquerdo do corte. O caractere na posicao deste indice sera incluido na string resultante.
+ * @param endIndex Indice direito do corte. O caractere na posicao deste indice nao sera incluido na string resultante.
+ * @return Nova string resultante do corte da string de entrada.
+ * @attention O programa ira abortar caso o beginIndex seja menor que zero ou maior ou igual ao tamanho da string de origem.
+ * @attention O programa ira abortar caso o endIndex seja menor ou igual a zero ou maior que o tamanho da string de origem.
+ * */
 char *strSubstring(const char *srcString, const size_t beginIndex, const size_t endIndex)
 {
     if (beginIndex < 0)
@@ -161,11 +173,14 @@ char *strSubstring(const char *srcString, const size_t beginIndex, const size_t 
 }
 
 /**
- * Esta funcao serve para obter a menor posicao da primeira ocorrencia de um segmento de um arranjo de caracteres em um arranjo de caracteres.
- * @param *string Ponteiro apontando para um arranjo de caracteres que nele sera procurada por um segmento.
- * @param *key Ponteiro apontando para um segmento de arranjo de caracteres que sera procurado no arranjo de caracteres.
- * @return A menor posicao da primeira ocorrencia de um segmento de um arranjo de caracteres no arranjo de caracteres.
-*/
+ * Serve para obter a primeira ocorrencia de uma substring em uma string.
+ * @param srcString Ponteiro para a String original.
+ * @param str Ponteiro para a substring que sera procurada na string de origem.
+ * @return Posicao da primeira ocorrencia da substring na string.
+ * @attention Caso nao seja encontrado a substring na string sera retornado o tamanho da string de origem.
+ * @attention Caso um dos parametros seja nulo o programa ira abortar.
+ * @attention Caso o tamanho da string str seja maior que o tamanho da srcString, o programa ira abortar.
+ * */
 size_t strIndexOf(const char *srcString, const char *str)
 {
     if (srcString == NULL)
@@ -225,12 +240,14 @@ size_t strIndexOf(const char *srcString, const char *str)
 }
 
 /**
- * Esta funcao serve para obter a menor posicao da primeira ocorrencia de um segmento de um arranjo de caracteres em um arranjo de caracteres.
- * @param *string Ponteiro apontando para um arranjo de caracteres no qual sera feita a busca pelo segmento.
- * @param *key Ponteiro apontando para um segmento de arranjo de caracteres que sera procurado no arranjo de caracteres.
- * @param begin Posicao limite a esquerda.
- * @return A menor posicao da primeira ocorrencia do segmento de arranjo de caracteres no arranjo de caracteres.
-*/
+ * Serve para obter a primeira ocorrencia de uma substring em uma string com um indice esquerdo delimitador.
+ * @param srcString Ponteiro para a String original.
+ * @param str Ponteiro para a substring que sera procurada na string de origem.
+ * @param fromIndex Indice esquerdo delimitador. O caractere na posicao do indice sera incluido na area de busca.
+ * @return Posicao da primeira ocorrencia da substring na string.
+ * @attention Caso um dos parametros srcString ou str seja nulo, o programa sera abortado.
+ * @attention Caso o valor de fromIndex seja inferior a zero ou superior ou igual ao tamanho da srcString, o programa sera abortado.
+ * */
 size_t strIndexOfFromIndex(const char *srcString, const char *str, const size_t fromIndex)
 {
     if (srcString == NULL)
@@ -264,11 +281,13 @@ size_t strIndexOfFromIndex(const char *srcString, const char *str, const size_t 
 }
 
 /**
- * Esta funcao serve para obter a maior posicao da primeira ocorrencia de um segmento de um arranjo de caracteres em um arranjo de caracteres.
- * @param *string Ponteiro apontando para um arranjo de caracteres no qual sera realizado a busca pelo segmento.
- * @param *key Ponteiro apontando para o segmento de arranjo de caracteres que sera procurado no arranjo de caracteres.
- * @return A maior posicao da primeira ocorrencia do segmento no arranjo de caracteres.
-*/
+ * Serve para obter posica da ultima ocorrencia de uma substring em uma string.
+ * @param srcString Ponteiro para a String original.
+ * @param str Ponteiro para a substring que sera procurada
+ * @return Posicao da ultima ocorrencia da substring na string.
+ * @attention Caso um dos parametros srcString ou str seja nulo, o programa sera abortado.
+ * @attention Caso o tamanho de str seja maior que o tamanho de srcString, o programa sera abortado.
+ * */
 size_t strLastIndexOf(const char *srcString, const char *str)
 {
     if (srcString == NULL)
@@ -344,12 +363,14 @@ size_t strLastIndexOf(const char *srcString, const char *str)
 }
 
 /**
- * Esta funcao serve para obter a maior posicao da primeira ocorrencia de um segmento de um arranjo de caracteres em um arranjo de caracteres.
- * @param *string Ponteiro apontando para um arranjo de caracteres no qual sera realizado a busca pelo segmento.
- * @param *key Ponteiro apontando para o segmento de um arranjo de caracteres que sera procurado no arranjo de caracteres.
- * @param end Posicao limite a esquerda.
- * @return A maior posicao da primeira ocorrencia da substring na String.
-*/
+ * Serve para obter a ultima ocorrencia de uma substring em uma string com indice direito delimitador.
+ * @param srcString Ponteiro para a String original.
+ * @param str Ponteiro para a substring a ser procurada.
+ * @param fromIndex Indice direito delimitador. O caractere na posicao do indice nao sera incluido na area de busca.
+ * @return Posicao da ultima ocorrencia da substring na string.
+ * @attention Caso um dos parametros srcString ou str seja nulo, o programa sera abortado.
+ * @attention Caso o valor de fromIndex seja menor ou igual a zero ou maior o tamanho da srcString, o programa sera abortado.
+ * */
 size_t strLastIndexOfFromIndex(const char *srcString, const char *str, const size_t fromIndex)
 {
     if (srcString == NULL)
@@ -383,12 +404,14 @@ size_t strLastIndexOfFromIndex(const char *srcString, const char *str, const siz
 }
 
 /**
- * Esta funcao serve para realizar a substituicao de um segmento arranjo de caracteres contido dentro de outro arranjo de caracteres por outro segmento de arranjo de caracteres.
- * @param *original Ponteiro apontando para o arranjo de caracteres srcString que sera modificado, resultando no retorno.
- * @param *replace Ponteiro apontando para o arranjo de caracteres que sera removido.
- * @param *replacement Ponteiro apontando para o arranjo de caracteres que sera adicionado no lugar do segmento de arranjo de caracteres que foi removido.
- * @return Ponteiro apontando para o novo arranjo de caracteres gerado a partir da substituicao.
-*/
+ * Serve para substituir todas as ocorrencias das substrings na string de origem pela string de substituicao.
+ * @param srcString Ponteiro para a String de origem.
+ * @param regex Ponteiro para a substring a ser substituida todas as suas ocorrencias.
+ * @param replacement Ponteiro para a string que ira substituir a string de substituicao.
+ * @return Ponteiro para a String resultante da substituicao.
+ * @attention Caso um dos parametros srcString, regex ou replacement seja nulo, o programa ira abortar.
+ * @attention Caso o tamanho de regex seja maior que o tamanho da srcString, o programa ira abortar.
+ * */
 char *strReplaceAll(const char *srcString, const char *regex, const char *replacement)
 {
     if (srcString == NULL)
@@ -418,7 +441,6 @@ char *strReplaceAll(const char *srcString, const char *regex, const char *replac
     //Contando as ocorrencias do regex
     size_t numberReplacements = 0;
     size_t headCounterReplacements = 0;
-    bool repetir = true;
     while (headCounterReplacements < strlen(srcString))
     {
         headCounterReplacements = strIndexOfFromIndex(srcString, regex, headCounterReplacements)+1;
@@ -483,14 +505,13 @@ char *strReplaceAll(const char *srcString, const char *regex, const char *replac
     return strdup(destString);
 }
 
-
 /**
- * Esta funcao serve para verificar se um segmento de arranjo de caracteres esta contido em uma posicao do arranjo de arranjo de caracteres.
- * @param *str[] Um arranjo de ponteiros apontando para os arranjos de caracteres.
- * @param len_str Numero de elementos no arranjo de ponteiros str.
- * @param *key Ponteiro apontando para para o arranjo de caracteres chave da pesquisa.
- * @return Valor booleano indicando se o elemento procurado encontra-se no arranjo de arranjos de caracteres.
-*/
+ * Serve para verificar se um arranjo de string contem uma string.
+ * @param str Ponteiro para o Arranjo de strings.
+ * @param lenStr Tamanho do arranjo de strings.
+ * @param key Ponteiro para a string procurada.
+ * @return Valor booleano indicando se a string foi encontrada no arranjo.
+ * */
 bool strArrContains(const char **str, const size_t lenStr, const char *key)
 {
     bool contains=false;
@@ -509,18 +530,17 @@ bool strArrContains(const char **str, const size_t lenStr, const char *key)
 }
 
 /**
- * Esta funcao serve para converter um arranjo de caracteres para minusculo.
- * @param *string Ponteiro apontando para o arranjo de caracteres cujos caracteres serao convertidos para maiusculo.
- * @return Ponteiro apontando para o novo arranjo de caracteres resultante do processo de conversao para minusculo.
-*/
+ * Serve para converter as letras maiusculas uma string para minusculos.
+ * @param string Ponteiro para a string de origem.
+ * @return Ponteiro para a string resultante.
+ * */
 char *strToLowerCase(const char *string)
 {    
-    char copyString[strlen(string)];
-    strcpy(copyString, string);
+    char *copyString = strClone(string);
     for(int i=0;i<strlen(string);i++)
     {
         copyString[i]= (char) tolower(copyString[i]);
     }
 
-    return strdup(copyString);
+    return copyString;
 }
